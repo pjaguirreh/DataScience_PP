@@ -1,0 +1,402 @@
+---
+title: 'Introducción a R/RStudio'
+subtitle: 'Ciencia de datos para Políticas Públias'
+author: Pablo Aguirre Hörmann
+date: "20 de noviembre, 2019"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    highlight: zenburn
+    theme: journal
+  html_notebook: default
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, error = FALSE, class.output='light', class.error = 'light')
+```
+
+## R Notebook
+
+Este es un [R Markdown](http://rmarkdown.rstudio.com) *Notebook*. Cuando se ejecute código dentro del *notebook* los resultados aparecerán justo abajo.
+
+Pueden ejecutar el código presionando el botón *Run* (flech verde) de cada *chunk* poniendo el cursor dentro del *chunk* by presionando *Ctrl+Shift+Enter* (para todo el *chunk*) o *Ctrl+Enter* (para una linea en particular). 
+
+Pueden agregar nuevos *chunks* presionando *Ctrl+Alt+I*.
+
+Cuando guarden un *notebook*, un archivo HTML con el código y resultados será guardado también (se puede presionar *Preview* o *Ctrl+Shift+K*) para tener un "preview" del documento.
+
+## R como calculadora 
+
+Primero que todo, R puede ser usado como una -excesivamente llamativa- calculadora
+
+```{r}
+(10^2) * 14
+exp(1) # función que entrega el resultado de e^x. Pueden saber más sobre esta (y cualquier funcion) usando ?exp
+log(100, base = 10) # función para calcular logaritmo (en este caso el logarítmo de 100 con base 10).
+```
+
+**AHORA USTEDES: en "Console" calculen la diferencia entre 2019 y el año que entraron a la Universidad (pregrado), luego dividan eso por la diferencia entre 2019 y el año que nacieron. Multipliquen el resultado por 100 y tendrán el porcentaje de su vida que han dedicado -de alguna una otra forma- a la Universidad. Calculen la raíz cuadrada de ese número (`sqrt`).**
+
+## Tipos de datos
+
+`R` no solo trabaja con datos numéricos, los principales tipos de datos con que se puede trabajar son:
+ 
+- *integer* / *numeric* / *complex*: números enteros (1, 2, 3, -1238, etc), números reales (2.5, pi, etc), números complejos e imaginarios, etc
+- *character*: texto ("hola")
+- *logical*: `TRUE`, `FALSE`
+
+## Comentarios y espacios
+
+### Comentarios
+
+El signo `#` se puede utilizar para hacer comentarios en tu código (similar a `//` o `*` en los Do File de Stata o formas similares en otros softwares)
+
+```{r}
+2 + 3 + 4 #La respuesta es 9
+```
+
+### Espacios
+
+En general en R no son importantes los espacios
+```{r}
+2 + 3 + 4
+2+3+4
+2+                         3             +4
+#incluso
+
+2+
+  3+
+  4
+```
+
+Pero si lo son, por ejemplo, cuando tratamos con *string values* (caractéres.. o letras)
+```{r}
+"Los espacios son importantes"
+"Los         espacios                            sonmuyimportantes"
+```
+ 
+### Espacio entre distintas acciones/tareas
+
+```{r error = TRUE}
+"Los espacios"  "son importantes"  2+2
+```
+
+R evalua el código linea por linea, es decir, cada linea tiene que estar correctamente escrita (dentro del contexto del lenguaje de programación `R`). Con `;` le decimos `R` que evalue hasta ese punto y que considere lo que viene después como una nueva linea.
+
+```{r results='hold'}
+"Los espacios" ; "son importantes" ; 2+2
+```
+
+## Operadores lógicos
+
+Los operadores lógicos son una pieza clave de cualquier lenguaje de programación o software de manejo de datos o estadística. Por suerte, en `R` no son muy distintos a los que ya conocen por otros lenguajes/software (o al menos son bastante intuitivos).
+
+1. `<`   menor
+2. `<=`  menor o igual 
+3. `>`   mayor
+4. `>=`  mayor o igual
+5. `==`  igual 
+6. `!=`  diferente
+7. `&`   y
+8. `|`   o
+
+Como funcionan:
+
+```{r collapse=TRUE}
+1 == 1
+1 == 2
+1 != 2
+1 <= 2 & 1 <= 3
+1 == 1 | 1 == 2
+```
+
+**AHORA USTEDES: ¿qué resultado dan las siguientes operaciones? ¿por qué?**
+
+```{r, eval = FALSE}
+1 > 1 | 1 < 2 & 3 == 3
+
+1 > 1 & 1 > 2 & 1 > 3
+```
+
+## Definir variables
+
+En `R` se utiliza una flecha (`<-`) para poder crear variables (u objetos).*Se puede utlizar casi cualquier nombre para asignar a un objeto siempre y cuando no comience con un número*
+
+```{r}
+suma <- 2 + 2
+```
+
+*También se puede usar `=` para crear una variable pero trataremos de no usarlo ya que `=` se ocupa también para definir los valores de argumentos dentro de una función (como el ejemplo de`log` que vimos hace poco)*
+
+Haber creado el objeto `suma` no nos dió el resultado automáticamente sino que hemos creado una variable que contiene el resultado de la operación (ver la ventana *Global Environment*). Podemos "imprimir" la informaci[on que contiene esta variable recién creada simplemente escribiendo su nombre.
+
+```{r}
+suma
+```
+
+Los objetos que creemos (en este caso `suma`) se comportan de igual manera que el valor o valores que contengan (en este caso un número).
+
+```{r}
+suma*5
+```
+
+Podemos también usar estas variables para generar nuevas
+
+```{r}
+suma_multiplicacion <- suma*5
+```
+
+Para borrar objetos utilizamos la función `rm` (de *remove*)
+
+```{r}
+rm(suma)
+```
+
+**AHORA USTEDES: Generen una variable `x` igual a $3^2$ y una variable `y` igual a 9. Ocupe el operador `==` para comparar ambos resultados guardando este resultado en una variable `resultado` y elimine las variables `x` e `y` (con `rm`).**
+
+## Objetos en `R`
+
+`R` es un lenguaje basado en objetos. En otras palabras, toda acción que realicemos se basará en la manipulación de algún tipo de estos objetos. Entre los [objetos más utilizados](http://venus.ifca.unican.es/Rintro/_images/dataStructuresNew.png) (o más básicos) en `R` están:
+
+- **Vectores**: objetos uni-dimensionales del mismo *tipo*. Por ejemplo, un vector con 10 elementos correspondientes a los números del 1 al 10, o a las primeras 10 letras del abecedario.
+- **Matrices y _Arrays_**: objetos de dos (matrices) o más (*arrays*) dimensiones. Los elementos en estos objetos son del mismo *tipo*.
+- **Data frames**: los vectores pueden considerarse un tipo especial de matrices. Es lo más cercano a una "planilla Excel". Las columnas deben tener el mismo *tipo* pero distintas columnas pueden ser de distinto *tipo*.
+- **Listas**: son objetos similares a los vectores pero sus elementos no tienen que ser del mismo *tipo*. Es más, los elementos de una lista pueden ser cualquier tipo de objeto. Por ejemplo, el primer elemento de una lista puede ser un vector de 10 números, el segundo puede ser una matriz de letras, y el tercero puede ser un *array*.
+
+Por ahora nos concentraremos en los objetos **vector** y **data frames**.
+
+### Vectores
+
+Crearemos algunos vectores con la ayuda de la función `c()` (de concatenar o combinar)
+
+```{r collapse=TRUE}
+vector1 <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) #o más corto c(1:10)
+vector1
+
+# o con carácteres
+vector2 <- c("a", "b", "c", "d")
+vector2
+
+#o...
+vector3 <- c("1", "2", "3", "4")
+vector3
+```
+
+Podemos usar la misma función `c()` para unir distintos vectores
+
+```{r}
+vector4 <- c(vector2, vector3, vector3) #¿qué pasa si tratamos de unir a "vector1"?
+vector4
+```
+
+#### Operaciones con vectores
+
+La mayoría de las operaciones matemáticas que ya hemos visto funcionan con los vectores
+
+```{r collapse=TRUE}
+vector1 + vector1
+vector1/vector1 #¿qué pasa si es que utilizo vectores de distinto tamaño?
+```
+
+#### Indices (manipulación de vectores)
+
+Muchas veces querremos manipular nuestros objetos. La forma básica de hacer esto es utilizando paréntesis cuadrados (`[]`) como el lugar para indicar que tipo de información queremos manipular dentro de nuestros objetos. 
+
+```{r collapse=TRUE}
+vector5 <- c("Hola", ",", "?", "qué", "tal", "?")
+vector5
+```
+
+```{r collapse=TRUE}
+vector5[3] # referencia al tercer elemento del vector
+vector5[2:4] #referencia a un rango dentro del vector 
+vector5[c(1,3,4)] # referencia de ciertos elementos dentro del vector
+```
+
+**AHORA USTEDES: completen las siguientes operaciones para lograr el resultado que se pide**
+
+**No seleccionar el elemento en la segunda posición (`,`)**
+```{r, eval = FALSE}
+vector5[__]
+```
+
+**Reemplazar el primer elemento (`Hola`) por `Hello`**
+
+```{r, eval = FALSE}
+vector5[_] <- ______ 
+```
+
+Los operadores lógicos también pueden ser de utilidad para el manejo de vectores
+
+```{r collapse=TRUE}
+vector6 <- c(1, 1, 2, 3, 4, 4.5 , 6, 6, 10)
+vector6
+vector6[vector6 == 1]
+```
+
+**AHORA USTEDES: completen las siguientes operaciones para lograr el resultado que se pide**
+
+**Seleccionar todos los elementos mayor o igual a 4**
+```{r, eval = FALSE}
+_______[vector6 __ 4]
+```
+
+**Seleccionar los elementos distintos a la raiz cuadrada de 16 y mayores a 2**
+
+```{r, eval = FALSE}
+vector6[vector6 __ sqrt(__) & vector6 _ 2]
+```
+### Data Frames
+
+Los *data frames* son probablemente los objetos que más utilizarán en `R`. Estos consisten en un conjunto de vectores del mismo tamaño que pueden ser de igual o diferente tipo.
+
+```{r}
+ID <- c(10,20,30,40)
+Producto <- c("libro", "lapiz", "carpeta", "goma")
+Disponibilidad <- c(TRUE,FALSE,TRUE,FALSE)
+Precio <- c(2.5, 8, 10, 7)
+df <- data.frame(ID, Producto, Disponibilidad, Precio)
+df
+```
+
+De forma similar a los vectores, podemos acceder a columnas, filas o subconjuntos de nuestro *data frame* utilizando `[fila, columna]`.
+
+```{r collapse=TRUE}
+df[2,3] # valor correspondiente a la fila 2 de la columna 3
+df[,4] # toda la columna 4 (variable precio)
+df[2,] # toda la fila 2
+df[1:2, 2:4] # subconjunto correspondiente a producto, disponibilidad y precio para las dos primeras filas
+df[, c("ID", "Precio")] # También se pueden usar los nombres
+df[, c(1,4)]
+```
+
+**AHORA USTEDES: Seleccionar un subconjunto correspondiente a la columna `Producto` y las filas 1 y 4**
+
+```{r, eval = FALSE}
+df[c(_,_),__________] o df[c(_,_),_]
+```
+Ahora bien, podemos también hacer otra cosa para que la manipulación de *data frames* sea más fácil (o intuitivo).
+
+```{r}
+df$Producto # lo mismo que df[,2]
+df$Disponibilidad[2:4] # Elementos 2, 3 y 4 de la columna o variable "Disponibilidad"
+```
+
+**AHORA USTEDES: Seleccionar la primera observacion de la variable `Precio`**
+
+```{r, eval = FALSE}
+__$______[_]
+```
+
+Utilizar `$` presenta varias ventajas a la hora de trabajar con *data frames*. Por ejemplo, podemos crear nuevas variables (o columnas)
+
+```{r}
+cantidad <- c(3,2,5,7)
+df$cantidad <- cantidad
+df$gasto <- df$Precio*df$cantidad
+df$vacia <- NA
+df
+df$vacia <- NULL # o df <- df[,-7]
+df
+```
+
+**AHORA USTEDES: generen una variable `precio_2` correspondiente a la variable `precio` al cuadrado**
+
+```{r, eval = FALSE}
+df_________  <- ______^_
+```
+
+`R` viene con una serie de *data frames* incorporados a los que se pueden acceder fácilmente y que permiten poder practicar.
+
+```{r warning=FALSE}
+data(package = .packages(all.available = TRUE)) #ver datos ejemplo que vienen en R
+data(iris) #View(iris) para ver los datos
+```
+
+```{r collapse=TRUE}
+class(iris)
+dim(iris) # c(nrow(iris), ncol(iris))
+names(iris)
+summary(iris)
+```
+
+### Funciones
+
+Práticamente todas las operaciones en `R` corresponden  funciones. Estas siguen la forma general de `funcion(argumento1, argumento2, argumento3, ...)`. Por ejemplo, hasta ahora hemos visto funciones como: `c()`, `exp()`, `sqrt()`, `class()`, `summary()`, `log()`, entre otras.
+
+En el caso de `log()` vimos el ejemplo de `log(100, base = 10)`. Si utilizamos la función `help()` (o `?`) podemos saber un poco más sobre esta. 
+
+```{r, results = FALSE}
+?log # o help(log)
+```
+
+`log()` tiene dos argumentos: 
+
+- `x`: un número o vector numérico al que se le calculará el logarítmo
+- `base`: la base con la cual se calculará el logarítmo. Noten que por defecto se ocupa un valor igual a `exp(1)`
+
+Analicen el siguiente código:
+
+```{r, results = FALSE}
+log(100, base = 10)
+log(100, 10)
+log(10, 100)
+log(10, x = 100)
+log(100)
+```
+
+También podemos crear nuestras propias funciones:
+
+```{r}
+al_cuadrado <- function(x) {
+  print(x^2)
+}
+```
+
+```{r}
+al_cuadrado(3)
+```
+
+**AHORA USTEDES: generen una función (`mi_funcion`) que ocupe dos argumentos `x` e `y` donde primero `x` es multiplicado por `y` (asigne esta operación a `paso1` dentro de la función) y que luego divida por dos el resultado anterior**
+
+```{r, eval = FALSE}
+mi_funcion <- ________(x, _) _
+  paso1 _ _ * _
+  _____(_____/_)
+_
+```
+
+## Ejercicios
+
+1. Creen un nuevo *script*
+2. Generen un vector **x** que contenga una secuencia de números enteros del 1 al 10
+
+```{r, eval = FALSE}
+x <- _(_:_)
+```
+
+3. Generen un vector **y** que contenga una secuencia de números pares del 2 al 20
+
+```{r, eval = FALSE}
+_ <- seq(_, _, by = 2)
+```
+
+4. Cree un objeto **M** que contenga ambos vectores recien creados como sus columnas y elimine los objetos `x` e `y`
+
+```{r, eval = FALSE}
+M <- cbind(_, _)
+__(x, y)
+```
+
+5. Extraigan los valores de la quinta fila de **M**
+
+```{r, eval = FALSE}
+M[__]
+```
+
+6. Extraigan los valores de la segunda columna de **M**
+
+```{r, eval = FALSE}
+_[__]
+```
