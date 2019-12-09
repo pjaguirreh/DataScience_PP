@@ -1,0 +1,348 @@
+---
+title: 'Manejo de datos utilizando el Tidyverse'
+subtitle: 'Ciencia de datos para políticas públicas'
+author: Pablo Aguirre Hörmann
+date: "26 de noviembre, 2019"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    highlight: zenburn
+    theme: journal
+  html_notebook: default
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, class.output='light')
+```
+
+## Importar datos 
+
+En este ejemplo utilizaremos las funciones presentes en las librerías `readr` y `readxl` para cargar datos separados por comas (o csv) y datos de archivos `excel`. Estas librerías son similares a las que vienen en R por defecto pero optimizan ciertas cosas que las otras no.
+
+**Estas librerías no vienen instaladas en sus computadores por lo que deberían primero que todo instalarlas con el comando `install.packages("nombredelalibrería")`. Esta acción deben realizarla una vez pero luego en cada sesión que quieran utilizar funciones de una librerías en particular deberán utilizar el comando `library(nombredelalibrería)`**. *Noten que al instalar una librerías se pone el nombre entre comillas pero al cargarla no.*
+
+A continuación cargamos las dos librerías para demostrar como cargar datos.
+
+```{r}
+library(readr) #install.packages("readr")
+library(readxl) #install.packages("readxl")
+```
+
+Para hacer esta demostración utilizaremos 4 archivos:
+
+- `datos_csv.txt`   = archivo con columnas separadas por comas y decimales definidos por puntos
+- `datos_csv2.txt`  = archivo con columnas separadas por punto y coma y decimales definidos por coma
+- `datos_xls.xls`   = archivo excel del tipo `xls` (anterior a 2007) con cuatro pestañas/hojas de datos
+- `datos_xlsx.xlsx` = archivo excel con exactamente la misma información que el anterior pero de tipo `xlsx` (posterior a 2007)
+
+```{r}
+datos_csv <- read_csv("Datos/datos_csv.txt")
+datos_csv2 <- read_csv2("Datos/datos_csv2.txt")
+datos_xls <- read_xls("Datos/datos_xls.xls")
+datos_xlsx <- read_xlsx("Datos/datos_xlsx.xlsx")
+
+# Por defecto las funciones cargarán la primera pestaña/hoja de información
+# pero podemos llamar un argumento extra si queremos información de otra
+datos_xlsx2 <- read_xlsx("Datos/datos_xlsx.xlsx", sheet = 2)
+```
+
+No trabajaremos de aquí en adelante con estos objetos que hemos cargado por lo que procedemos a eliminarlos.
+
+```{r}
+rm(datos_csv, datos_csv2, datos_xls, datos_xlsx, datos_xlsx2)
+# o bien rm(list = ls()) para eliminar todos los elementos del "Global Environment"
+```
+
+## Librería `tidyr`
+
+Librería con funciones para cambiar "la forma" de nuestros *data sets*. Primero que todo, cargamos la librería.
+
+```{r}
+library(tidyr) # install.packages("tidyr")
+```
+
+### `pivot_longer()`
+
+```{r}
+datos <- read_xlsx("Datos/datos_obesidad_ancho.xlsx")
+datos
+```
+
+Al inspeccionar `datos` vemos que hay cinco columnas que en realidad deberían ser parte de una sola columna de años y a la vez los valores de cada una de estas columans deberían tener una columna de valores (en este caso corresponden a tasas de obesidad). La función `pivot_longer()` nos permitirá poder convertir esta información en datos "tidy"
+
+La función `pivot_longer()` ocupa tres argumentos principales (además de los datos que queremos modificar):
+
+`cols` = nombres de columnas que serán utilizadas para crear una nueva columna (se pueden usar nombre o bien posición de la columna)
+`names_to` = nombre de la nueva columna que contendrá como valores los nombres de las columnas referenciadas en `cols`
+`values_to` = nombre de la nueva columna que contendrá los valores que tenían las filas correspondientes a las columnas referenciadas en `cols`
+
+```{r}
+datos2 <- pivot_longer(datos, cols = 5:9, names_to = "year", values_to = "obesity_rate")
+datos2
+```
+
+`datos2` pareciera estar ahora en formato "tidy". 
+
+**AHORA USTEDES: transformen `table4a` desde un formato ancho a uno largo. Las nuevas columnas deben llamarse `year` y `value`**
+
+```{r}
+table4a
+```
+
+```{r, eval = FALSE}
+pivot_longer(_____4a, ____ = _:_, names_to = "____", values_to = "_____")
+```
+
+### `pivot_wider()`
+
+```{r}
+datos3 <- read_xlsx("Datos/datos_obesidad_largo.xlsx")
+datos3
+```
+
+Al inspeccionar `datos3` vemos que hay dos columnas que en realidad deberían ser tres columnas con sus respectivos valores (información sobre cada país). La función `pivot_wider()` nos permitirá poder convertir esta información en datos "tidy"
+
+La función `pivot_wider()` ocupa dos argumentos principales (además de los datos que queremos modificar):
+
+`names_from` = nombre de la columna que tiene los "nombres" de las nuevas columnas a crear
+`values_from` = nombre de la columna que tiene los valores para las nuevas columnas a crear
+
+```{r}
+datos4 <- pivot_wider(datos3, names_from = Country_Variable, values_from = Value)
+datos4
+```
+
+`datos4` es ahora igual a `datos2` y por ende está en formato "tidy".
+
+**AHORA USTEDES: transformen `table2` desde un formato largo a uno ancho**
+
+```{r}
+table2
+```
+
+```{r, eval = FALSE}
+pivot_wider(_____, names_from = ____, values_from = _____)
+```
+
+### `separate()`
+
+```{r}
+datos5 <- read_xlsx("Datos/datos_obesidad_separar.xlsx")
+datos5
+```
+
+```{r}
+separate(datos5, value, into = c("year", "obesity_rate"), sep = "-")
+```
+
+**AHORA USTEDES: separen la columna `rate` en `table3` en dos columnas `value1` y `value2`**
+
+```{r}
+table3
+```
+
+```{r, eval = FALSE}
+separate(_____, rate, ____ = c("______", "______"))
+```
+
+### `unite()`
+
+```{r}
+datos6 <- read_xlsx("Datos/datos_obesidad_unir.xlsx")
+datos6
+```
+
+```{r}
+unite(datos6, "year", c(century, year), sep = "")
+```
+
+*Para los siguientes pasos seguiremos con `datos2` (en formato tidy) que lo renombraremos `datos` y luego eliminaremos el resto de los elementos creados*
+
+```{r}
+datos <- datos2
+rm(datos2, datos3, datos4, datos5, datos6)
+```
+
+## Librería `dplyr`
+
+```{r}
+library(dplyr) # install.packages("dplyr")
+```
+
+La librería `dplyr` tiene muchísimas funcionalidades pero por ahora nos concentraremos en sus principales acciones (o verbos): `select()`, `arrange()`, `filter()`, `mutate()`, `summarise()`, y `group_by()`
+
+### `select()`
+
+`select()` nos permite seleccionar un conjunto de las columnas de nuestros datos. Por ejemplo, de las 7 variables podemos elegir solo 4:
+
+```{r}
+select(datos, Country, Region, year, obesity_rate)
+```
+
+Esta nueva selección podemos también asignarla a una *nueva base* (o variable):
+
+```{r, eval = FALSE}
+datos_seleccion <- ______(_____, _______, Region, year, obesity_rate)
+```
+
+Con `select()` podemos también reordenar la posición de las columnas/variables de una base de datos de distintas formas:
+
+```{r}
+select(datos, Code, everything())
+```
+
+`select()` cuenta también con una serie de funciones de ayuda que nos pueden facilitar el trabajo:
+
+```{r, collapse=TRUE}
+select(datos, starts_with("Co"), obesity_rate) # seleccionar las columnas cuyos nombres comienzan con "Co"
+
+select(datos, Country, contains("_")) # seleccionar las columnas cuyos nombres contienen "_"
+
+select_if(datos, is.numeric) # seleccionar las columnas que correspondan a datos numéricos
+```
+
+Otra función de utilidad relacionada a `select()` es `rename()` que nos permite cambiar los nombres de nuestras variables/columnas (*nombre_nuevo = nombre_viejo*).
+
+```{r, eval = FALSE}
+datos_new <- 
+  rename(datos,
+    Pais = _______,
+    Codigo = ____,
+    Grupo_ingreso = ____________,
+    "Año" = ____,
+    Tasa_obesidad = ____________
+  )
+```
+
+### `arrange()`
+
+`arrange()` permite ordenar la base de datos según una o más columnas/variables.
+
+```{r, collapse=TRUE}
+# ordenando la base por la variable de obesidad (ascendente)
+arrange(datos, desc(obesity_rate)) 
+
+arrange(datos, year, obesity_rate) # ordenar por año y dentro de año por obesidad
+```
+
+### `filter()`
+
+`filter()` permite crear subconjuntos de los datos originales a partir de operaciones lógicas (`==`, `!=`, `&`, `|`, etc).
+
+- Dejar solo observaciones correspondientes al año 2000
+
+```{r, collapse=TRUE}
+filter(datos, year == 2000)
+```
+
+- dejar observaciones para aquellos países que no son "High Income"
+
+```{r, eval = FALSE}
+filter(datos, ____________ != "___________")
+```
+
+- Dejar observaciones que correspondan a países de "Europe & Central Asia" o "Latin America & Caribbean" y que tengan tasas de obesidad mayor al promedio de la tasa de obesidad de todos los datos
+
+```{r, eval = FALSE}
+______(datos, 
+       Region %in% _("Europe & Central Asia", "_________________________") & 
+         obesity_rate > ____(obesity_rate, na.rm = TRUE)
+       )
+```
+
+### `mutate()`
+
+`mutate()` nos permite generar nuevas variables de forma simple
+
+```{r}
+# Generar una nueva variable "obesity_decimal" correspondiente a "obesity_rate" dividido en 100
+mutate(datos, obesity_decimal = obesity_rate/100)
+```
+
+Podemos crear más de una variable nueva y usar estas mismas variables en el mismo comando, por ejemplo a continuación se genera la variable `obesity_decimal` y dentro del mismo comando `mutate` se ocupa esa misma variable para generar otra llamada `obesity_decimal_cuadrado`:
+
+```{r, eval = FALSE}
+______(datos,
+    obesity_decimal = obesity_rate/100,
+    obesity_decimal_cuadrado = _______________^2
+         )
+```
+
+### `summarise()` y `group_by()`
+
+La función `summarise()` nos permite agregar los datos para hacer cálculos. Por ejemplo, podemos calcular el promedio de todos los datos respecto a una variable de interés:
+
+```{r}
+summarise(datos, promedio = mean(obesity_rate, na.rm = TRUE))
+```
+
+Ahora bien, la función `summarise()` se vuelve más poderosa cuando se combina con la función `group_by()` la cual nos permite ejecutar los calculos de `summarise()` respecto a variables de agrupación. Por ejemplo, de forma similar al ejemplo anterior podemos calcular el promedio de `obesity_rate` pero para cada valor (o grupo) de la variable `Income_Group`:
+
+```{r}
+datos_group_Income <- group_by(datos, Income_Group)
+summarise(datos_group_Income, promedio = mean(obesity_rate, na.rm = TRUE)) 
+```
+
+Y se puede agrupar por más de una variable:
+
+```{r, eval = FALSE}
+datos_group_Income_year <- _______(datos, Income_Group, year)
+_________(datos_group_Income_year, promedio = ____(obesity_rate, na.rm = TRUE)) 
+```
+
+Así como calcular más de un indicador agregado (más de una opción en `summarise()`):
+
+```{r, eval = FALSE}
+summarise(________________________, 
+            n_observaciones = n(),
+            promedio_obesidad = mean(obesity_rate, na.rm = TRUE)
+          )
+```
+
+## El tubo (`%>%`)
+
+*El tubo es originalmente parte de la librería `magrittr` pero viene cargada también en la librería `dplyr`*
+
+El *tubo* (`%>%`) nos permite escribir código de forma similar a como se leería cualquier texto (de izquierda a derecha). Consideren un vector de números del cual quieren primero calcular su promedio y luego la raíz cuadrada, a continuación se muestra como hacer este cálculo con y sin el uso de `%>%`.
+
+```{r, collapse=TRUE}
+x <- 1:10 # crear un vector de 10 números consecutivos
+
+sqrt(mean(x))
+
+x %>% mean() %>% sqrt()
+```
+
+Como pueden ver, el tubo permite encadenar todas las acciones que queramos hacer con nuestros datos. En otras palabras, pasamos de leer nuestras acciones "de adentro hacia afuera" a "de izquierda a derecha". Otra forma de interpretar `%>%` es como *y luego* (tomamos `x` *y luego* calculamos su promedio -`mean()`- *y luego* calculamos la raíz cuadrada -`sqrt()`-).
+
+## Combinando un poco de todo
+
+La ventaja de la sintáxis basada en el `tidyverse` es que nos permite realizar una serie de manipulaciones de datos complejas de forma encadenada (o paso a paso). Por ejemplo, a continuación realizaremos cuatro pasos comenzando desde la base de datos incial `datos` utilizando funciones de `dplyr`:
+
+1. Filtrar (`filter()`) observaciones con valor *nulo* en la variable `Income_Group`
+2. Agrupar (`group_by()`) los datos respecto a `Income_Group` y `year`
+3. Calcular (`summarise()`) el promedio de `obesity_rate` para cada grupo
+4. Renombrar (`rename()`) dos variables del inglés al español
+
+Finalmente, utilizaremos la función `spread()` de la librería `tidyr`para modificar **la forma** de los datos con fines de presentarlos de mejor manera.
+
+```{r, eval = FALSE}
+datos %>% 
+  # Primero quitaremos aquellas observaciones que no tienen valor para "Income_Group"
+  ______(!is.na(____________)) %>%
+  
+  # Agrupamos las observaciones por "Income_Group" y "year"
+  ______by(Income_Group, _____) %>% 
+  
+  # Calculamos el promedio de tasa de obesidad para cada "Income_Group" y cada año
+  _________(tasa_obesidad = mean(____________, na.rm = TRUE)) ___ 
+  
+  # Cambiamos el nombre de las variables por las cuales agrupamos
+  rename(Grupo_ingreso = ____________,
+         Anio = ____) %>%
+         
+  # Modificamos la forma del resultado para "mejor presentación"
+  ___________(names_from = ____, ___________ = tasa_obesidad)
+```
+
