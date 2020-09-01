@@ -1,0 +1,335 @@
+---
+title: "Visualizaciones en R con `ggplot2`"
+author: Pablo Aguirre Hörmann
+date: "12 de agosto 2020"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    highlight: zenburn
+    theme: journal
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE, 
+                      error = FALSE, 
+                      message = FALSE)
+```
+
+# Cargar paquetes
+
+Las demostraciones de este documento utilizan principalmente el paquete `ggplot2` pero también nos apoyaremos en algunas funciones de `dplyr` que veremos en la tercera clase y otros paquetes que permiten aumentar el potencial de las visualizaciones.
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(ggforce)
+library(ggalt)
+library(ggfortify)
+library(patchwork)
+library(GGally)
+library(ggpubr)
+library(ggridges)
+```
+
+# Datos a utilizar
+
+Los datos que utilizaremos (`iris` y `ToothGrowth`) vienen por defecto en `R` por lo que no tendremos que importar nada. Sin embargo, a estos datos les haremos pequeñas modificaciones pero para efectos de este documento simplemente ejecuten el siguiente código (en las clases 3 y 4 veremos más sobre manejo de datos).
+
+```{r}
+iris <- iris %>%
+  rename(Sepalo.Largo = Sepal.Length,
+         Sepalo.Ancho = Sepal.Width, 
+         Petalo.Largo = Petal.Length,
+         Petalo.Ancho = Petal.Width,
+         Especie = Species)
+
+aplicaciones <- ToothGrowth %>% 
+  rename(Largo = len,
+         Tratamiento = supp,
+         Dosis = dose) %>% 
+  mutate(
+    Dosis = case_when(
+      Dosis == 2 ~ 1.5),
+    Dosis = as.factor(Dosis))
+```
+
+## Gráficos con `iris`
+
+### Gráfico inicial
+
+```{r}
+ggplot(data = iris, aes(x = Sepalo.Ancho, y = Sepalo.Largo)) + #gráfico base donde se definen los ejes de nuestro gráfico
+  xlab("Ancho de Sépalo (cm)") + #Nombre a mostrar para el eje X
+  ylab("Largo de Sépalo (cm)") + #Nombre a mostrar para el eje Y
+  geom_point() + #acá definimos que será un gráfico "de puntos" (dispersión)
+  theme_minimal() #cambia el fondo del gráfico
+```
+
+### Diferenciar puntos según especie
+
+```{r}
+ggplot(data = iris, aes(x = Sepalo.Ancho, y = Sepalo.Largo, color = Especie)) + #agregamos un argumento "color" que definira colores distintos para cada valor de "Especie"
+  xlab("Ancho de Sépalo (cm)") +
+  ylab("Largo de Sépalo (cm)") +
+  geom_point() + 
+  theme_minimal()
+```
+
+### Lineas de tendencia
+
+```{r}
+ggplot(data = iris, aes(x = Sepalo.Ancho, y = Sepalo.Largo)) +
+  xlab("Ancho de Sépalo (cm)") +
+  ylab("Largo de Sépalo (cm)") +
+  geom_point(aes(color = Especie)) + 
+  geom_smooth(method = "lm") + # crea linea de tendencia representada por una regresión linea (lm = linear model)
+  theme_minimal()
+
+ggplot(data = iris, aes(x = Sepalo.Ancho, y = Sepalo.Largo, color = Especie)) + 
+  xlab("Ancho de Sépalo (cm)") +
+  ylab("Largo de Sépalo (cm)") +
+  geom_point() + 
+  geom_smooth(method = "lm") + # agregamos una linea de tendencia para cada especie (esto se define en la primera linea)
+  theme_minimal()
+
+ggplot(data = iris, aes(x = Sepalo.Ancho, y = Sepalo.Largo, color = Especie)) + 
+  xlab("Ancho de Sépalo (cm)") +
+  ylab("Largo de Sépalo (cm)") +
+  geom_point() + 
+  geom_smooth(se = FALSE, method = "lm") + #Acá quitamos el area de define el intervalo de confianza de la linea de tendencia
+  theme_minimal()
+```
+
+### Facet
+
+```{r}
+ggplot(data = iris, aes(x = Sepalo.Ancho, y = Sepalo.Largo, color = Especie)) + 
+  xlab("Ancho de Sépalo (cm)") +
+  ylab("Largo de Sépalo (cm)") +
+  geom_point() + 
+  geom_smooth(se = FALSE) +
+  facet_wrap(~Especie) + # Separamos el gráfico para cada uno de los valores de la variabla "Especie"
+  theme_minimal()
+
+ggplot(data = iris, aes(x = Sepalo.Ancho, y = Sepalo.Largo, color = Especie)) + 
+  xlab("Ancho de Sépalo (cm)") +
+  ylab("Largo de Sépalo (cm)") +
+  geom_point() + 
+  geom_smooth(se = FALSE) +
+  facet_wrap(~Especie, scale = 'free_y') + # Ajustamos el eje Y para que queden similares
+  theme_minimal()
+```
+
+### Paquetes complementarios
+
+Algunos paquetes complementarios a `ggplot2` nos permiten aumentar el potencial de estas herramientas. Por ejemplo, la función `facet_zoom` del paquete `ggforce`.
+
+```{r}
+library(ggforce)
+
+ggplot(iris, aes(Petalo.Largo, Petalo.Ancho, colour = Especie)) +
+  xlab("Ancho de Sépalo (cm)") +
+  ylab("Largo de Sépalo (cm)") +  
+  geom_point() +
+  facet_zoom(x = Especie == "versicolor") +
+  theme_bw() # cambié de theme_minimal a theme_bw para destacar
+```
+
+Y también hacer gráficos más complejos, en este caso con los paquetes `ggalt` y `ggfortify`. Sobre componentes principales hablaremos más en la clase 8.
+
+```{r}
+library(ggalt)
+library(ggfortify)
+
+# Calcular componentes principales
+df <- iris[c(1, 2, 3, 4)]
+pca_mod <- prcomp(df)  # compute principal components
+
+# Data frames con componentes principales
+df_pc <- data.frame(pca_mod$x, Especie=iris$Especie)  # dataframe con todos los componentes principales
+df_pc_vir <- df_pc %>% filter(Especie == "virginica")  # df para 'virginica'
+df_pc_set <- df_pc %>% filter(Especie == "setosa")  # df para 'setosa'
+df_pc_ver <- df_pc %>% filter(Especie == "versicolor")  # df para 'versicolor'
+ 
+# Gráfico
+ggplot(df_pc, aes(PC1, PC2, col = Especie, shape = Especie)) + #base del gráfico, se definen las variables para los ejes y la variable definirá color y forma
+  geom_point(size = 2) +   # gráfica puntos
+  labs(title = "Clusters de plantas del género Iris", 
+       subtitle = "Utilizando componentes principales (PC1 y PC2) como ejes X e Y",
+       caption = "Fuente: Datos 'Iris'") + # Distintas etiquetas (texto) usado en el gráfico
+  coord_cartesian(xlim = 1.2 * c(min(df_pc$PC1), max(df_pc$PC1)), 
+                  ylim = 1.2 * c(min(df_pc$PC2), max(df_pc$PC2))) +   # ajuste de los ejes X e Y
+  geom_encircle(data = df_pc_vir, aes(x = PC1, y = PC2)) +   # dibujar circulos
+  geom_encircle(data = df_pc_set, aes(x = PC1, y = PC2)) + 
+  geom_encircle(data = df_pc_ver, aes(x = PC1, y = PC2)) + 
+  theme_minimal()
+```
+
+Por su parte, el paquete `patchwork` nos permite visualizar más de un gráfico de forma sencilla.
+
+```{r}
+LP <- ggplot(iris, aes(x = Petalo.Largo, colour = Especie, fill = Especie)) +
+  geom_density(alpha = 0.3) +
+  geom_vline(aes(xintercept = mean(Petalo.Largo), colour = Especie), linetype = "dashed", color = "grey", size = 1) +
+  xlab("Largo de Pétalo (cm)") +  
+  ylab("Densidad") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+AP <- ggplot(iris, aes(x = Petalo.Ancho, colour = Especie, fill = Especie)) +
+  geom_density(alpha = 0.3) +
+  geom_vline(aes(xintercept = mean(Petalo.Ancho), colour = Especie), linetype = "dashed", color = "grey", size = 1) +
+  xlab("Ancho de Pétalo (cm)") +  
+  ylab("Densidad") +
+  theme_minimal() +
+  theme(legend.position = "none")
+  
+AS <- ggplot(iris, aes(x = Sepalo.Ancho, colour = Especie, fill = Especie)) +
+  geom_density(alpha = 0.3) +
+  geom_vline(aes(xintercept = mean(Sepalo.Ancho), colour = Especie), linetype = "dashed", color = "grey", size = 1) +
+  xlab("Ancho de Sépalo (cm)") +  
+  ylab("Densidad") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+LS <- ggplot(iris, aes(x = Sepalo.Largo, colour = Especie, fill = Especie)) +
+  geom_density(alpha = 0.3) +
+  geom_vline(aes(xintercept = mean(Sepalo.Largo), colour = Especie), linetype = "dashed", color = "grey", size = 1) +
+  xlab("Largo de Sépalo (cm)") +  
+  ylab("Densidad") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Plotear todo junto
+library(patchwork)
+(LP|AP) / (AS|LS)
+```
+
+```{r}
+BLS <- ggplot(iris, aes(Especie, Sepalo.Largo, fill = Especie)) + 
+        geom_boxplot() +
+        scale_y_continuous("Largo de Sépalo (cm)", breaks = seq(0, 30, by = 0.5)) +
+        theme_minimal() +
+        theme(legend.position = "none")
+
+BAS <- ggplot(iris, aes(Especie, Sepalo.Ancho, fill = Especie)) + 
+        geom_boxplot() +
+        scale_y_continuous("Ancho de Sépalo (cm)", breaks = seq(0, 30, by = 0.5)) +
+        theme_minimal() +
+        theme(legend.position = "none")
+
+BLP <- ggplot(iris, aes(Especie, Petalo.Largo, fill = Especie)) + 
+        geom_boxplot() +
+        scale_y_continuous("Largo de Pétalo (cm)", breaks = seq(0, 30, by = 0.5)) +
+        theme_minimal() +
+        theme(legend.position = "none")
+        
+BAP <- ggplot(iris, aes(Especie, Petalo.Ancho, fill = Especie)) + 
+        geom_boxplot() +
+        scale_y_continuous("Ancho de Pétalo (cm)", breaks = seq(0, 30, by = 0.5)) +
+        theme_minimal() +
+        theme(legend.position = "none")
+
+
+# Plotear todo junto
+(BLS|BAS) / (BLP|BAP)
+```
+
+
+```{r}
+library(GGally)
+
+ggpairs(data = iris[1:4],
+        title = "Correlaciones entre variables") + 
+  theme_minimal()
+```
+
+```{r}
+library(ggpubr)
+
+ggscatterhist(
+  iris, x = "Sepalo.Largo", y = "Sepalo.Ancho",
+  xlab = "Largo de Sépalo (cm)",
+  ylab = "Ancho de Sépalo (cm)",
+  color = "Especie", size = 3, alpha = 0.6,
+  margin.params = list(fill = "Especie", color = "black", size = 0.2)
+  )
+```
+
+```{r}
+library(ggridges)
+
+ggplot(iris, aes(x = Sepalo.Largo, y = Especie)) +
+  geom_density_ridges(aes(fill = Especie)) + 
+  theme_minimal()
+```
+
+## Gráficos con `aplicaciones`
+
+A continuación se presentan algunos ejemplos "más académicos" de visualizaciones utlizando los datos `aplicaciones`
+
+```{r}
+ggplot(aplicaciones, aes(x = Dosis, y = Largo)) +
+  geom_col(aes(color = Tratamiento, fill = Tratamiento), 
+           position = position_dodge(), width = 0.8) + 
+  theme_minimal()
+
+ggplot(aplicaciones, aes(x = Dosis, y = Largo)) +
+  geom_col(aes(color = Tratamiento, fill = Tratamiento), 
+           position = position_stack(), width = 0.8) + 
+  theme_minimal()
+```
+
+```{r}
+aplicaciones %>% 
+  group_by(Tratamiento, Dosis) %>% 
+  summarise(Largo = mean(Largo)) %>% 
+  ggplot(aes(x = Dosis, y = Largo, group = Tratamiento)) +
+  geom_line(aes(linetype = Tratamiento)) +
+  geom_point(aes(shape = Tratamiento)) + 
+  theme_minimal()
+```
+
+```{r}
+aplicaciones %>% 
+  group_by(Dosis) %>% 
+  summarise(
+    sd = sd(Largo, na.rm = TRUE),
+    Largo = mean(Largo)) %>% 
+  
+  ggplot(aes(Dosis, Largo)) +
+  geom_line(aes(group = 1)) +
+  geom_errorbar(aes(ymin = Largo - sd, ymax = Largo + sd), width = 0.2) +
+  geom_point(size = 2) +
+  theme_minimal()
+
+aplicaciones %>% 
+  group_by(Dosis) %>% 
+  summarise(
+    sd = sd(Largo, na.rm = TRUE),
+    Largo = mean(Largo)) %>% 
+  
+  ggplot(aes(Dosis, Largo)) +
+  geom_bar(stat = "identity", fill = "lightgray", color = "black") +
+  geom_errorbar(aes(ymin = Largo, ymax = Largo + sd), width = 0.2) +
+  theme_minimal() 
+```
+
+```{r}
+aplicaciones %>% 
+  group_by(Dosis, Tratamiento) %>% 
+  summarise(
+    sd = sd(Largo, na.rm = TRUE),
+    Largo = mean(Largo)) %>% 
+  
+  ggplot(aes(Dosis, Largo)) +
+  geom_line(aes(linetype = Tratamiento, group = Tratamiento)) +
+  geom_point() +
+  geom_errorbar(
+    aes(ymin = Largo - sd, ymax = Largo + sd),
+    width = 0.2) +
+  theme_minimal()
+```
